@@ -1,36 +1,37 @@
-import pygame as pg
 import os
-from pygame import *
+import pygame as pg
+from pygame import Rect, Color, sprite
 import pyganim
 
 COLOR = "#888888"
 ANIMATION_SPEED = 0.2  # скорость смены кадров
-dir = os.path.dirname(os.path.abspath(__file__))
+game_dir = os.path.dirname(os.path.abspath(__file__))
+
+# png игры ⬇
 
 WALK = [
-    (f"{dir}/png/Sprite_me1.png"),  # анимация хотьбы
-    (f"{dir}/png/Sprite_me2.png"),
-    (f"{dir}/png/Sprite_me3.png"),
-    (f"{dir}/png/Sprite_me4.png"),
-    (f"{dir}/png/Sprite_me5.png"),
+    (f"{game_dir}/png/person1.png"),  # персонаж идет
+    (f"{game_dir}/png/person2.png"),
+    (f"{game_dir}/png/person3.png"),
+    (f"{game_dir}/png/person4.png"),
+    (f"{game_dir}/png/person5.png"),
 ]
 
-JUMP = [(f"{dir}/png/Sprite_me1.png", ANIMATION_SPEED)]  # анимация прыжка
+JUMP = [(f"{game_dir}/png/person1.png", ANIMATION_SPEED)]  # прыжок
 
-STAY = [(f"{dir}/png/Sprite_me1.png", ANIMATION_SPEED)]  # анимация персонаж стоит
+STAY = [(f"{game_dir}/png/person1.png", ANIMATION_SPEED)]  # персонаж стоит
 
 SINK = [
-    (f"{dir}/png/Sprite_sink_0.png"),  # анимация персонаж тонет
-    (f"{dir}/png/Sprite_sink_1.png"),
-    (f"{dir}/png/Sprite_sink_2.png"),
-    (f"{dir}/png/Sprite_sink_3.png"),
-    (f"{dir}/png/Sprite_sink_4.png"),
+    (f"{game_dir}/png/Sprite_sink_0.png"),  # персонаж тонет
+    (f"{game_dir}/png/Sprite_sink_1.png"),
+    (f"{game_dir}/png/Sprite_sink_2.png"),
+    (f"{game_dir}/png/Sprite_sink_3.png"),
+    (f"{game_dir}/png/Sprite_sink_4.png"),
 ]
-sink_number = 0  # номер картинки
 
 
 class Player(pg.sprite.Sprite):
-    """Класс игрок"""
+    """Класс Игрок"""
 
     def __init__(self, sprite_group):
         pg.sprite.Sprite.__init__(self)
@@ -38,128 +39,120 @@ class Player(pg.sprite.Sprite):
         self.y = 250
         self.speed = 1  # скорость персонажа
         self.add(sprite_group)  # добавление в группу спрайтов для отрисовки
-        self.on_ground = False  # флаг провеки положения персонажа: на платформе или нет
-        self.collision_man = False  # флаг проверки пересечения с мобом
-        self.image = pg.image.load(f"{dir}/png/Sprite_me1.png").convert_alpha()
+        self.on_ground = False  # провека положения персонажа на платформе
+        self.collision_man = False  # проверка пересечения с мобом
+        self.image = pg.image.load(f"{game_dir}/png/person1.png").convert_alpha()
         self.rect = Rect(
             (self.x + 20, self.y, 30, 100)
-        )  # прямоугольник персонажа, по которому определяется столкновение с другими предметами
-        self.right = False
-        self.left = False
-        self.up = False  # флаг прыжка
+        )  # прямоугольник персонажа, по которому определяется пересечение
+        self.right = False  # идет вправо
+        self.left = False  # идет влево
+        self.up = False  # прыжок
         self.jump_power = 9  # высота прыжка
-        self.right_jump = False  # флаг прыжка вправо
-        self.left_jump = False  # флаг прыжка вправо
-        self.loss = False  # флаг проигрыша
+        self.right_jump = False  # прыжок вправо
+        self.left_jump = False  # прыжок влево
+        self.loser = False  # проигрыш
         self.lives = 3  # кол-во жизней
-        self.stop_move = False  # флаг остановки движения
+        self.stop_move = False  # остановка движения
         self.state = 0  # координата x сохранения персонажа
-        self.loss_live = False  # флаг потери жизни
+        self.lost_life = False  # потеря жизни
         self.image.set_colorkey(Color(COLOR))
+        self.sink_num = 0  # номер картинки
 
-        animation = []  # реализации анимации хотьбы с помощью pyganim
+        animation_w = []  # анимация хотьбы
         for anim in WALK:
-            animation.append((anim, ANIMATION_SPEED))
-            self.animation_walk = pyganim.PygAnimation(animation)
+            animation_w.append((anim, ANIMATION_SPEED))
+            self.animation_walk = pyganim.PygAnimation(animation_w)
             self.animation_walk.play()
 
-        self.animation_stay = pyganim.PygAnimation(
-            STAY
-        )  # реализация анимации персонаж стоит pyganim
+        self.animation_stay = pyganim.PygAnimation(STAY)  # анимация бездействия/стояния
         self.animation_stay.play()
 
-        self.animation_jump = pyganim.PygAnimation(
-            JUMP
-        )  # реализация анимации прыжка pyganim
+        self.animation_jump = pyganim.PygAnimation(JUMP)  # анимация прыжка
         self.animation_jump.play()
 
-        animation_s = []  # реализация анимации персонаж тонет pyganim
+        animation_s = []  # анимация погружения в воду
         for anim in SINK:
-            animation_s.append((anim, 0.3))
+            animation_s.append((anim, ANIMATION_SPEED))
             self.animation_sink = pyganim.PygAnimation(animation_s)
             self.animation_sink.play()
 
     def collide_platform(self, platforms: list):
-        """Проверка, находится ли персонаж на платформе"""
+        """Проверка нахождения персонажа на платформе"""
         for platform in platforms:
             if sprite.collide_rect(self, platform):
                 self.on_ground = True  # персонаж на платформе
                 self.state = (
                     platform.rect.x
-                )  # сохранение персонажа на x коорденате последнего пройденного островка
+                )  # сохранение персонажа на x коорденате последнего пройденного острова
 
     def collide_man(self, men: list):
-        """Проверка, пересекается ли персонаж с парнем-мобом"""
+        """Проверка пересечения с мобом"""
         for man in men:
             if sprite.collide_rect(self, man):
                 self.collision_man = True  # персонаж пересекает парня-моба
                 self.stop_move = True  # персонаж останавливает движение
 
-    def update(self, platforms, len_level):  # метод изменения персонажа в пространстве
-        self.collide_platform(platforms)  # проверка нахождения персонажа на платформе
-        global sink_number
-        if (
-            not self.stop_move
-        ):  # если движение персонажа не приостановлено, то он может изменять положение в пространстве
-            if self.left:  # реализация движения влево
-                if self.rect.x >= 20:  # не может уйти влево меньше 20
-                    self.rect.x -= self.speed
-                    self.image.fill(Color(COLOR))
-                    self.animation_walk.blit(self.image, (0, 0))
-            if self.right:  # реализация движения вправо
-                if (
-                    self.rect.x <= len_level - 70
-                ):  # до абсолютного конца экране не доходит
-                    self.rect.x += self.speed
-                    self.image.fill(Color(COLOR))
-                    self.animation_walk.blit(self.image, (0, 0))
+    def update(self, platforms):
+        """Изменение персонажа в прсотранстве"""
+        self.collide_platform(platforms)  # персонаж на платформе ?
+        if not self.stop_move:  # если движение персонажа не приостановлено,
+            # то он может изменять положение в пространстве
+
+            if self.left and self.rect.x >= 20:  # джижение влево
+                self.rect.x -= self.speed
+                self.image.fill(Color(COLOR))
+                self.animation_walk.blit(self.image, (0, 0))
+
+            if self.right:  # движение вправо
+                self.rect.x += self.speed
+                self.image.fill(Color(COLOR))
+                self.animation_walk.blit(self.image, (0, 0))
 
             if not (self.left or self.right):  # если не двигаемся, то стоим
                 self.image.fill(Color(COLOR))
                 self.animation_stay.blit(self.image, (0, 0))
 
             if self.up:  # реализация прыжка
-                if self.rect.x <= len_level - 70:
-                    if self.jump_power >= -9:
-                        if self.jump_power > 0:  # поднимает персонажа
-                            self.rect.y -= (self.jump_power**2) // 2
-                            self.image.fill(Color(COLOR))
-                            self.animation_jump.blit(self.image, (0, 0))
-                            if self.right_jump:  # смещение при прыжке вправо
-                                self.rect.x += 10
-                            elif (
-                                self.left_jump and self.rect.x >= 40
-                            ):  # смещение при прыжке влево
-                                self.rect.x -= 6
-                        else:  # опускаем персонажа
-                            self.rect.y += (self.jump_power**2) // 2
-                            self.image.fill(Color(COLOR))
-                            self.animation_jump.blit(self.image, (0, 0))
-                        self.jump_power -= 1
-                    else:
-                        self.up = self.left_jump = self.right_jump = (
-                            False  # прыжок окончен
-                        )
-                        self.jump_power = 9
+                if self.jump_power >= -9:
+                    if self.jump_power > 0:  # вверх
+                        self.rect.y -= (self.jump_power**2) // 2
+                        self.image.fill(Color(COLOR))
+                        self.animation_jump.blit(self.image, (0, 0))
+                        if self.right_jump:  # смещение при прыжке вправо
+                            self.rect.x += 10
+                        elif (
+                            self.left_jump and self.rect.x >= 40
+                        ):  # смещение при прыжке влево
+                            self.rect.x -= 6
+                    else:  # опускаем персонажа
+                        self.rect.y += (self.jump_power**2) // 2
+                        self.image.fill(Color(COLOR))
+                        self.animation_jump.blit(self.image, (0, 0))
+                    self.jump_power -= 1
+                else:
+                    self.up = self.left_jump = self.right_jump = False  # прыжок окончен
+                    self.jump_power = 9
         if not self.on_ground and not self.up:
-            if not self.loss:
+            # падение в воду
+            if not self.loser:
                 self.image.fill(Color(COLOR))
-                if sink_number == 0:
+                if self.sink_num == 0:
                     self.rect.y += 20
                     self.stop_move = True
-                if sink_number <= 59:
+                if self.sink_num <= 59:
                     self.animation_sink.blitFrameNum(
-                        sink_number // 15, self.image, (0, 0)
+                        self.sink_num // 15, self.image, (0, 0)
                     )
-                    sink_number += 1
+                    self.sink_num += 1
                 else:
                     self.lives -= 1
-                    sink_number = 0
-                    self.loss_live = True
+                    self.sink_num = 0
+                    self.lost_life = True
                     if self.lives == 0:
-                        self.loss = True
+                        self.loser = True
                     else:
                         self.rect.x = self.state
                         self.rect.y = 250
 
-        self.on_ground = False  # мы не знаем, когда наш персонаж на платформе, для этого нужна постоянная проверка
+        self.on_ground = False  # провека положения персонажа всегда

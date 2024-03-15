@@ -90,7 +90,7 @@ class Combat(pg.sprite.Sprite):
             if self.num == 0:  # условие выолняется один раз
                 self.rect.x = player.rect.x  # координата х картинки боя = x персонажа
                 self.num += 1
-                player.loss = True  # персонаж проиграл
+                player.loser = True  # персонаж проиграл
             if self.combat_number <= 59:  # бесконечная анимации боя
                 self.animation_combat.blitFrameNum(
                     self.combat_number // 15, self.image, (0, 0)
@@ -110,7 +110,8 @@ def main():
     pg.display.set_caption("Woman")
     icon = pg.image.load(f"{game_dir}/png/icon.png.png")  # иконка нашей игры
     pg.display.set_icon(icon)
-    back = pg.image.load(f"{game_dir}/png/Sprite_back22.png")  # задний фон нашей игры
+    # back = pg.image.load(f"{game_dir}/png/Sprite_back22.png")  # задний фон нашей игры
+    back = pg.image.load(f"{game_dir}/png/back_f.png")  # задний фон нашей игры
 
     # группа всех спратов игры, нужны для отрисовки уровня игры
     all_sprites = pg.sprite.Group()
@@ -147,7 +148,9 @@ def main():
     win = False  # флаг выигрыша
 
     clock = pg.time.Clock()
-    platforms_map = "_ < _. "  # < _  * , ' #_  <  .  _  _  _' # карта платформ уровня
+    platforms_map = (
+        "_ < _. "  # < _  * , ' #_  <  .  _  _  _' "  # карта платформ уровня
+    )
     platforms_x = 0
     platforms_y = 330
     man_y = 241  # y моба-мужчины
@@ -174,9 +177,12 @@ def main():
         if symbol == "<":
             platform = Big_island(platforms_x, platforms_y - 5, all_sprites, platforms)
             # на середине острова размещаем парня-моба
-            # Man(platform.rect.x + platform.rect.width//2, man_y, all_sprites, men_mobs)
+            # Man(
+            #     platform.rect.x + platform.rect.width // 2, man_y, all_sprites, men_mobs
+            # )
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
+    print(platforms_x)
     last_platform_width = platform.rect.width
     player = Player(all_sprites)  # создаем персонажа
     camera = Camera(camera_configure, len_level)  # создаем камеру
@@ -223,7 +229,7 @@ def main():
 
         # если нет проигрыша или выигрыша, игра для персонажа продолжается
         if not (game_over or win):
-            player.update(platforms, len_level)  # обновляем движение персонажа
+            player.update(platforms)  # обновляем движение персонажа
             player.collide_man(men_mobs)  # проверяем на столкновение с мобом
 
         # обновляем движения парня-моба, его движение продолжается вне зависимости от статуса игры
@@ -244,16 +250,16 @@ def main():
 
         # действия при пересечении парня-моба или потери жизни
         if (
-            player.collision_man or player.loss_live
+            player.collision_man or player.lost_life
         ):  # показывается анимация разбитого сердца
             if count_heart <= 59:
                 screen.blit(heart[count_heart // 15], (560, 0))
                 count_heart += 1
-            elif player.loss:  # если проигрыш, то выводим соответствующую картинку
+            elif player.loser:  # если проигрыш, то выводим соответствующую картинку
                 game_over = True
                 screen.blit(game_over_pic, (50, 50))
             else:  # если у персонажа еще есть жизни, то игра продолжается
-                player.loss_live = False
+                player.lost_life = False
                 count_heart = 0
                 player.stop_move = False  # игрок продолжает движение
 
