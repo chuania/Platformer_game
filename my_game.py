@@ -73,8 +73,6 @@ class Combat(pg.sprite.Sprite):
         self.rect = Rect((self.x + 20, self.y, 100, 100))
         self.add(sprite_group)
         self.combat_number = 0  # номер картинки боя
-        self.num = 0  # флаг для выпонения условия один раз
-        self.fight = False
 
         animation = []  # анимация
         for anim in COMBAT:
@@ -85,15 +83,12 @@ class Combat(pg.sprite.Sprite):
     def check_combat(self, player):
         if player.collision_man:
             player.loser = True
-            self.fight = True
 
     def play_combat(self, player):
         """Вывод анимации"""
-        if self.fight:
+        if player.collision_man:
             self.image.fill(Color(COLOR))
-            if self.num == 0:  # условие выолняется один раз
-                self.rect.x = player.rect.x  # координата х картинки боя = x персонажа
-                self.num += 1
+            self.rect.x = player.rect.x  # координата х картинки боя = x персонажа
             if self.combat_number <= 59:  # бесконечная анимация
                 self.animation_combat.blitFrameNum(
                     self.combat_number // 15, self.image, (0, 0)
@@ -107,8 +102,7 @@ class Combat(pg.sprite.Sprite):
 
 
 def main():
-    """Реализация игры"""
-    # ------------------------------------------------------
+    """Начинаем игру"""
     pg.init()
     screen = pg.display.set_mode((600, 400))
     pg.display.set_caption("Woman")
@@ -143,7 +137,6 @@ def main():
 
     # картинка проигрыша
     game_over_pic = pg.image.load(f"{game_dir}/png/game_over.png").convert_alpha()
-    game_over = False  # флаг проигрыша
     # картинка выигрыша
     win_pic = pg.image.load(f"{game_dir}/png/Sprite_win1.png").convert_alpha()
     win = False  # флаг выигрыша
@@ -184,7 +177,6 @@ def main():
     player = Player(all_sprites)  # создаем персонажа
     camera = Camera(camera_configure, len_level)  # создаем камеру
     combat = Combat(all_sprites)  # создаем класс боя
-    # ------------------------------------------------------
 
     while True:
 
@@ -196,40 +188,35 @@ def main():
                 sys.exit()
         pg.display.flip()
         keys = pg.key.get_pressed()
+        screen.blit(back, (0, 0))  # рисуем фон
 
         # функционал клавиш
         # ------------------------------------------------------
-        if keys[pg.K_LEFT]:  # нажимаем левую стрелку - персонаж идет влево
+        # левая стрелка - персонаж идет влево
+        if keys[pg.K_LEFT]:
             player.left = True
         else:
-            player.left = False  # нет нажатия - нет движения
-
-        if keys[pg.K_RIGHT]:  # нажимаем правую стрелку - персонаж идет вправо
+            player.left = False
+        # правая стрелка - персонаж идет вправо
+        if keys[pg.K_RIGHT]:
             player.right = True
         else:
-            player.right = False  # нет нажатия - нет движения
-
+            player.right = False
         # пробел или стрелка вверх - персонаж прыгает
         if keys[pg.K_SPACE] or keys[pg.K_UP]:
             player.up = True
-            if keys[pg.K_RIGHT]:
-                # если еще нажата клавиша вправо - прыгает вправо
-                player.right_jump = True
-            elif keys[pg.K_LEFT]:
-                # если еще нажата клавиша влево - прыгает влево
-                player.left_jump = True
-
-        screen.blit(back, (0, 0))  # рисуем фон
         # ------------------------------------------------------
 
-        # логика игры
-        # ------------------------------------------------------
+        # Проверка событий
+        # ******************************************************
         camera.update(player)  # центрируем комеру вокруг персонажа
 
         # праверка на проигрыш и выигрыш
-        if not (game_over or win):
+        if not (player.loser or win):
             player.update(platforms)  # обновляем движение персонажа
             player.collide_man(men_mobs)  # проверяем на столкновение с мобом
+            player.dive()  # проверка на погружение
+            player.on_ground = False  # провека положения персонажа всегда
 
         # обновляем движения парня-моба, его движение продолжается вне зависимости от статуса игры
         [mob.update() for mob in men_mobs]
@@ -257,14 +244,11 @@ def main():
         # -------------------------------------------------
 
         # вывод жизней, проигрыша и выигрыша
-        # *************************************************
-
         if player.lost_life:  # сердце разбивается при потери жизни
             if count_heart <= 59:
                 screen.blit(heart[count_heart // 15], (560, 0))
                 count_heart += 1
             elif player.loser:  # картинка проигрыша
-                game_over = True
                 screen.blit(game_over_pic, (50, 50))
             else:  # продолжение игры после потери жизни
                 player.lost_life = False

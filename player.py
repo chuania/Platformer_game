@@ -1,3 +1,8 @@
+"""
+Реализация модуля игрока.
+Условия перемещения, пересечения и соответствующая анимация.
+"""
+
 import os
 import pygame as pg
 from pygame import Rect, Color, sprite
@@ -49,8 +54,6 @@ class Player(pg.sprite.Sprite):
         self.left = False  # идет влево
         self.up = False  # прыжок
         self.jump_power = 9  # высота прыжка
-        self.right_jump = False  # прыжок вправо
-        self.left_jump = False  # прыжок влево
         self.loser = False  # проигрыш
         self.lives = 3  # кол-во жизней
         self.stop_move = False  # остановка движения
@@ -94,8 +97,34 @@ class Player(pg.sprite.Sprite):
                 self.stop_move = True  # персонаж останавливает движение
                 self.lost_life = True
 
+    def check_lives(self):
+        """Проверка кол-ва жизней после утопа"""
+        if self.lives == 0:
+            self.loser = True
+        else:
+            self.rect.x = self.state
+            self.rect.y = 250
+
+    def dive(self):
+        """Проверка пересечения с водой"""
+        if not self.on_ground and not self.up:
+            self.image.fill(Color(COLOR))
+            if self.sink_num == 0:
+                self.rect.y += 20
+                self.stop_move = True
+            if self.sink_num <= 59:
+                self.animation_sink.blitFrameNum(
+                    self.sink_num // 15, self.image, (0, 0)
+                )
+                self.sink_num += 1
+            else:
+                self.lives -= 1
+                self.sink_num = 0
+                self.lost_life = True
+                self.check_lives()
+
     def update(self, platforms):
-        """Изменение персонажа в прсотранстве"""
+        """Изменение персонажа в пространстве"""
         self.collide_platform(platforms)  # персонаж на платформе ?
         if not self.stop_move:  # если движение персонажа не приостановлено,
             # то он может изменять положение в пространстве
@@ -120,10 +149,10 @@ class Player(pg.sprite.Sprite):
                         self.rect.y -= (self.jump_power**2) // 2
                         self.image.fill(Color(COLOR))
                         self.animation_jump.blit(self.image, (0, 0))
-                        if self.right_jump:  # смещение при прыжке вправо
+                        if self.right:  # смещение при прыжке вправо
                             self.rect.x += 10
                         elif (
-                            self.left_jump and self.rect.x >= 40
+                            self.left and self.rect.x >= 40
                         ):  # смещение при прыжке влево
                             self.rect.x -= 6
                     else:  # опускаем персонажа
@@ -132,28 +161,5 @@ class Player(pg.sprite.Sprite):
                         self.animation_jump.blit(self.image, (0, 0))
                     self.jump_power -= 1
                 else:
-                    self.up = self.left_jump = self.right_jump = False  # прыжок окончен
+                    self.up = False  # прыжок окончен
                     self.jump_power = 9
-        if not self.on_ground and not self.up:
-            # падение в воду
-            if not self.loser:
-                self.image.fill(Color(COLOR))
-                if self.sink_num == 0:
-                    self.rect.y += 20
-                    self.stop_move = True
-                if self.sink_num <= 59:
-                    self.animation_sink.blitFrameNum(
-                        self.sink_num // 15, self.image, (0, 0)
-                    )
-                    self.sink_num += 1
-                else:
-                    self.lives -= 1
-                    self.sink_num = 0
-                    self.lost_life = True
-                    if self.lives == 0:
-                        self.loser = True
-                    else:
-                        self.rect.x = self.state
-                        self.rect.y = 250
-
-        self.on_ground = False  # провека положения персонажа всегда
