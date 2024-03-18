@@ -22,11 +22,11 @@ JUMP = [(f"{game_dir}/png/person1.png", ANIMATION_SPEED)]  # прыжок
 STAY = [(f"{game_dir}/png/person1.png", ANIMATION_SPEED)]  # персонаж стоит
 
 SINK = [
-    (f"{game_dir}/png/Sprite_sink_0.png"),  # персонаж тонет
-    (f"{game_dir}/png/Sprite_sink_1.png"),
-    (f"{game_dir}/png/Sprite_sink_2.png"),
-    (f"{game_dir}/png/Sprite_sink_3.png"),
-    (f"{game_dir}/png/Sprite_sink_4.png"),
+    (f"{game_dir}/png/sink1.png"),  # персонаж тонет
+    (f"{game_dir}/png/sink2.png"),
+    (f"{game_dir}/png/sink3.png"),
+    (f"{game_dir}/png/sink4.png"),
+    (f"{game_dir}/png/sink5.png"),
 ]
 
 
@@ -92,6 +92,7 @@ class Player(pg.sprite.Sprite):
             if sprite.collide_rect(self, man):
                 self.collision_man = True  # персонаж пересекает парня-моба
                 self.stop_move = True  # персонаж останавливает движение
+                self.lost_life = True
 
     def update(self, platforms):
         """Изменение персонажа в прсотранстве"""

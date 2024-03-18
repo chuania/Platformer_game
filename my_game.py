@@ -1,6 +1,3 @@
-"""Собственно реализация игры, где персонаж прыгает по остаровкам 
-    и прыгает через мобов в надежде добраться до финала"""
-
 import sys
 import os
 import pygame as pg
@@ -13,36 +10,37 @@ from mobs import Man
 game_dir = os.path.dirname(os.path.abspath(__file__))
 COLOR = "#888888"
 
-# анимация боя
+# трали-вали
+
 COMBAT = [
-    (f"{game_dir}/png/Sprite_combat1.png"),
-    (f"{game_dir}/png/Sprite_combat2.png"),
-    (f"{game_dir}/png/Sprite_combat3.png"),
-    (f"{game_dir}/png/Sprite_combat4.png"),
+    (f"{game_dir}/png/combat1.png"),
+    (f"{game_dir}/png/combat2.png"),
+    (f"{game_dir}/png/combat3.png"),
+    (f"{game_dir}/png/combat4.png"),
 ]
 
 
 class Camera:
     """Класс "Камера". Это игровой экран(прямоугольник), в центре которого
-    на протяжении игры будет персонаж."""
+    на протяжении игры будет персонаж"""
 
     def __init__(self, camera_func, width: int, height=400):
         """Высота равна высоте нашего игрового экрана всегда"""
         # функция конфигурирования прямоугольника камеры вокруг персонажа
         self.camera_func = camera_func
-        # прямоугольник всего уровня, уровень гораздо больше чем игровой экран
+        # прямоугольник всего уровня
         self.state = Rect(0, 0, width, height)
 
     def apply(self, target: sprite):
         """Занимается пердвижением объектов уровня. Будет определяться
-        положние прямоугольника камеры(этим занимается функция update()),
+        положние прямоугольника камеры(update()),
         и только потом, относительно этого прямоугольника будут пердвигаться
         остальные предметы(target). x самих предметов не меняется,
-        просто объект рисуется с измененными координатами"""
+        объект рисуется с измененными координатами"""
         return target.rect.move(self.state.topleft)
 
     def update(self, target: Player):
-        """Та самая функция конфигурирования. Конфигурируется относительно главного героя."""
+        """Функция конфигурирования(относительно главного героя)"""
         self.state = self.camera_func(self.state, target.rect)
 
 
@@ -64,34 +62,39 @@ def camera_configure(camera: rect, target_rect: rect) -> rect:
 
 
 class Combat(pg.sprite.Sprite):
-    """Класс бой, который происходит при пересечении персонажа и парня-моба"""
+    """Происходит при пересечении персонажа и моба"""
 
     def __init__(self, sprite_group):
         pg.sprite.Sprite.__init__(self)
         self.x = 0
         self.y = 230
-        self.image = pg.image.load(f"{game_dir}/png/Sprite_combat1.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/combat1.png").convert_alpha()
         self.image.set_colorkey(Color(COLOR))
         self.rect = Rect((self.x + 20, self.y, 100, 100))
         self.add(sprite_group)
         self.combat_number = 0  # номер картинки боя
         self.num = 0  # флаг для выпонения условия один раз
+        self.fight = False
 
-        animation = []  # реализация анимации с помощью pyganim
+        animation = []  # анимация
         for anim in COMBAT:
             animation.append((anim, 0.3))
             self.animation_combat = pyganim.PygAnimation(animation)
             self.animation_combat.play()
 
+    def check_combat(self, player):
+        if player.collision_man:
+            player.loser = True
+            self.fight = True
+
     def play_combat(self, player):
-        """Вывод анимации боя"""
-        if player.collision_man:  # выводим анимацию боя с помощью pyganim
+        """Вывод анимации"""
+        if self.fight:
             self.image.fill(Color(COLOR))
             if self.num == 0:  # условие выолняется один раз
                 self.rect.x = player.rect.x  # координата х картинки боя = x персонажа
                 self.num += 1
-                player.loser = True  # персонаж проиграл
-            if self.combat_number <= 59:  # бесконечная анимации боя
+            if self.combat_number <= 59:  # бесконечная анимация
                 self.animation_combat.blitFrameNum(
                     self.combat_number // 15, self.image, (0, 0)
                 )
@@ -104,53 +107,49 @@ class Combat(pg.sprite.Sprite):
 
 
 def main():
-    """Функция реализует игру"""
+    """Реализация игры"""
+    # ------------------------------------------------------
     pg.init()
     screen = pg.display.set_mode((600, 400))
     pg.display.set_caption("Woman")
-    icon = pg.image.load(f"{game_dir}/png/icon.png.png")  # иконка нашей игры
+    icon = pg.image.load(f"{game_dir}/png/icon.png.png")  # иконка
     pg.display.set_icon(icon)
-    # back = pg.image.load(f"{game_dir}/png/Sprite_back22.png")  # задний фон нашей игры
-    back = pg.image.load(f"{game_dir}/png/back_f.png")  # задний фон нашей игры
+    back = pg.image.load(f"{game_dir}/png/back1.png")  # задний фон
 
-    # группа всех спратов игры, нужны для отрисовки уровня игры
+    # группа всех спратов для отрисовки уровня
     all_sprites = pg.sprite.Group()
-    # список спрайтов-платформ, нужен для проверки позиции персонажа на платформе
+    # список платформ для проверки позиции персонажа
     platforms = []
-    # список спрайтов-парней, нужен для проверки пересечения персонажа с парнем-мобом
+    # список парней, для проверки пересечения персонажа с мобом
     men_mobs = []
 
-    # цифры, показывающие кол-во жизней персонажа на экране
+    # цифры - кол-во жизней персонажа
     digits = [
-        pg.image.load(f"{game_dir}/png/Sprite_digit1.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_digit2.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_digit3.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_digit4.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_digit4.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/digit1.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/digit2.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/digit3.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/digit4.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/digit4.png").convert_alpha(),
     ]
 
-    # анимация разбитого сердца при потере жизни
+    # разбитое сердце при потере жизни
     heart = [
-        pg.image.load(f"{game_dir}/png/Sprite_heart11.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_heart12.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_heart13.png").convert_alpha(),
-        pg.image.load(f"{game_dir}/png/Sprite_heart14.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/heart1.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/heart2.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/heart3.png").convert_alpha(),
+        pg.image.load(f"{game_dir}/png/heart4.png").convert_alpha(),
     ]
-    count_heart = 0  # номер картинки разбитого сердца
+    count_heart = 0  # номер разбитого сердца
 
     # картинка проигрыша
-    game_over_pic = pg.image.load(
-        f"{game_dir}/png/Sprite_game_over.png"
-    ).convert_alpha()
+    game_over_pic = pg.image.load(f"{game_dir}/png/game_over.png").convert_alpha()
     game_over = False  # флаг проигрыша
     # картинка выигрыша
     win_pic = pg.image.load(f"{game_dir}/png/Sprite_win1.png").convert_alpha()
     win = False  # флаг выигрыша
 
     clock = pg.time.Clock()
-    platforms_map = (
-        "_ < _. "  # < _  * , ' #_  <  .  _  _  _' "  # карта платформ уровня
-    )
+    platforms_map = "_ < _. # < _  * , ' #_  <  .  _  _  _' "  # карта платформ уровня
     platforms_x = 0
     platforms_y = 330
     man_y = 241  # y моба-мужчины
@@ -177,16 +176,15 @@ def main():
         if symbol == "<":
             platform = Big_island(platforms_x, platforms_y - 5, all_sprites, platforms)
             # на середине острова размещаем парня-моба
-            # Man(
-            #     platform.rect.x + platform.rect.width // 2, man_y, all_sprites, men_mobs
-            # )
+            Man(
+                platform.rect.x + platform.rect.width // 2, man_y, all_sprites, men_mobs
+            )
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
-    print(platforms_x)
-    last_platform_width = platform.rect.width
     player = Player(all_sprites)  # создаем персонажа
     camera = Camera(camera_configure, len_level)  # создаем камеру
     combat = Combat(all_sprites)  # создаем класс боя
+    # ------------------------------------------------------
 
     while True:
 
@@ -199,35 +197,36 @@ def main():
         pg.display.flip()
         keys = pg.key.get_pressed()
 
-        if keys[
-            pg.K_LEFT
-        ]:  # если нажимаем клавишу левая стрелка, то персонаж идет влево
+        # функционал клавиш
+        # ------------------------------------------------------
+        if keys[pg.K_LEFT]:  # нажимаем левую стрелку - персонаж идет влево
             player.left = True
         else:
-            player.left = False  # если клавиша не нажата, то нет движения
+            player.left = False  # нет нажатия - нет движения
 
-        if keys[
-            pg.K_RIGHT
-        ]:  # если нажимаем клавишу правая стрелка, то персонаж идет вправо
+        if keys[pg.K_RIGHT]:  # нажимаем правую стрелку - персонаж идет вправо
             player.right = True
         else:
-            player.right = False  # если клавиша не нажата, то нет движения
+            player.right = False  # нет нажатия - нет движения
 
-        # если нажимаем клавишу пробел или стрелка вверх, то персонаж прыгает
+        # пробел или стрелка вверх - персонаж прыгает
         if keys[pg.K_SPACE] or keys[pg.K_UP]:
             player.up = True
             if keys[pg.K_RIGHT]:
-                # если еще нажата клавиша вправо, то персонаж прыгает вправо
+                # если еще нажата клавиша вправо - прыгает вправо
                 player.right_jump = True
             elif keys[pg.K_LEFT]:
-                # если еще нажата клавиша влево, то персонаж прыгает влево
+                # если еще нажата клавиша влево - прыгает влево
                 player.left_jump = True
 
         screen.blit(back, (0, 0))  # рисуем фон
+        # ------------------------------------------------------
 
+        # логика игры
+        # ------------------------------------------------------
         camera.update(player)  # центрируем комеру вокруг персонажа
 
-        # если нет проигрыша или выигрыша, игра для персонажа продолжается
+        # праверка на проигрыш и выигрыш
         if not (game_over or win):
             player.update(platforms)  # обновляем движение персонажа
             player.collide_man(men_mobs)  # проверяем на столкновение с мобом
@@ -235,41 +234,50 @@ def main():
         # обновляем движения парня-моба, его движение продолжается вне зависимости от статуса игры
         [mob.update() for mob in men_mobs]
 
+        combat.check_combat(player)  # если есть пересечение с мобом, то вывод комбат
         combat.play_combat(player)
 
-        for s in all_sprites:  # выводим на экран все спрайты игры если:
-            if not player.collision_man:  # если нет пересечения с парнем-мобом
-                if not isinstance(s, Combat):  # спрайт боя не выводим
-                    screen.blit(s.image, camera.apply(s))
-            else:  # если произошло пересечение с парнем-мобом, выводим все, кроме
-                # кроме парней-мобов, т.к. их анимация меняется на анимацию боя
+        # вывод на экран спрайтов
+        # -------------------------------------------------
+        for s in all_sprites:
+            if not player.collision_man:
+                if not isinstance(s, Combat):
+                    screen.blit(
+                        s.image, camera.apply(s)
+                    )  # спрайт комбат нет выводим без пересечения с мобом
+            else:
                 if s not in men_mobs:
-                    # кроме анимации самого персонажа по уже вышеуказанной причине
                     if not isinstance(s, Player):
-                        screen.blit(s.image, camera.apply(s))
+                        screen.blit(
+                            s.image, camera.apply(s)
+                        )  # при пересечении выводим все, кроме персонажа и моба
 
-        # действия при пересечении парня-моба или потери жизни
-        if (
-            player.collision_man or player.lost_life
-        ):  # показывается анимация разбитого сердца
+        # error: если на экране два моба, то один из них пропадет при пересечении с другим
+        # хочется, чтобы он остался
+        # -------------------------------------------------
+
+        # вывод жизней, проигрыша и выигрыша
+        # *************************************************
+
+        if player.lost_life:  # сердце разбивается при потери жизни
             if count_heart <= 59:
                 screen.blit(heart[count_heart // 15], (560, 0))
                 count_heart += 1
-            elif player.loser:  # если проигрыш, то выводим соответствующую картинку
+            elif player.loser:  # картинка проигрыша
                 game_over = True
                 screen.blit(game_over_pic, (50, 50))
-            else:  # если у персонажа еще есть жизни, то игра продолжается
+            else:  # продолжение игры после потери жизни
                 player.lost_life = False
+                player.stop_move = False
                 count_heart = 0
-                player.stop_move = False  # игрок продолжает движение
-
-        # если персонаж дошел до конца, то он выиграл, выводится соответствующая картинка
-        elif player.rect.x > platform.rect.x + 40:
+        elif player.rect.x > platform.rect.x + 40:  # персонаж выиграл
             screen.blit(win_pic, (50, 50))
             win = True
-        else:  # если нет коллизий с водой или мобом, то на экране выведены сердце и число жизней
+        else:  # персонаж в процессе прохождения уровня
             screen.blit(heart[0], (560, 0))
             screen.blit(digits[player.lives - 1], (540, 7))
+
+        # *************************************************
 
         pg.display.update()
 
