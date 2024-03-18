@@ -5,4 +5,6 @@
 3. Создаем мобов. Пересечение с мобом - быстрый проигрыш. 
 
 После реализации, игра имеет следующий интерфейс:
-![alt text](png/game.png)
+<p align="center">
+  <img width="600" height="400" src="https://github.com/chuania/Platformer_game/blob/main/png/game.png">
+</p>
