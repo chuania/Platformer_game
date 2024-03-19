@@ -1,18 +1,19 @@
+"""Реализация платформ, по которым ходит персонаж"""
+
 import os
 import pygame as pg
-from pygame import *
-
-"""Платформы"""
-
-dir = os.path.dirname(os.path.abspath(__file__))
+from pygame import Rect
 
 
-class Island_0(pg.sprite.Sprite):
-    """Класс остров 1"""
+game_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+class Island1(pg.sprite.Sprite):
+    """Первый остров"""
 
     def __init__(self, x, y, sprite_group, list_group):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load(f"{dir}/png/Sprite_island0.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/island1.png").convert_alpha()
         self.x = x
         self.y = y
         self.rect = Rect((self.x + 20, self.y, 80, 40))
@@ -20,12 +21,12 @@ class Island_0(pg.sprite.Sprite):
         list_group.append(self)
 
 
-class Island_1(pg.sprite.Sprite):
-    """Класс остров 2"""
+class Island2(pg.sprite.Sprite):
+    """Второй остров"""
 
     def __init__(self, x, y, sprite_group, list_group):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load(f"{dir}/png/Sprite_island1.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/island2.png").convert_alpha()
         self.x = x
         self.y = y
         self.rect = Rect(self.x + 15, self.y, 80, 40)
@@ -33,12 +34,12 @@ class Island_1(pg.sprite.Sprite):
         list_group.append(self)
 
 
-class Island_2(pg.sprite.Sprite):
-    """Класс остров 3"""
+class Island3(pg.sprite.Sprite):
+    """Третий остров"""
 
     def __init__(self, x, y, sprite_group, list_group):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load(f"{dir}/png/Sprite_island2.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/island3.png").convert_alpha()
         self.x = x
         self.y = y
         self.rect = Rect(self.x + 15, self.y, 80, 40)
@@ -47,11 +48,11 @@ class Island_2(pg.sprite.Sprite):
 
 
 class Brige(pg.sprite.Sprite):
-    """Класс мост"""
+    """Мост"""
 
     def __init__(self, x, y, sprite_group, list_group):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load(f"{dir}/png/Sprite_brige0.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/brige.png").convert_alpha()
         self.x = x
         self.y = y
         self.rect = pg.Rect(self.x + 5, self.y, 350, 80)
@@ -59,12 +60,12 @@ class Brige(pg.sprite.Sprite):
         list_group.append(self)
 
 
-class Big_island(pg.sprite.Sprite):
-    """Класс большой остров"""
+class Bigisland(pg.sprite.Sprite):
+    """Большой остров"""
 
     def __init__(self, x, y, sprite_group, list_group):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load(f"{dir}/png/Sprite_big1.png").convert_alpha()
+        self.image = pg.image.load(f"{game_dir}/png/big_island.png").convert_alpha()
         self.x = x
         self.y = y
         self.rect = pg.Rect((self.x + 20, self.y, 220, 40))

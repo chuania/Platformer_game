@@ -3,7 +3,7 @@ import os
 import pygame as pg
 from pygame import sprite, rect, Rect, Color
 import pyganim
-from platforms import Island_0, Island_1, Island_2, Brige, Big_island
+from platforms import Island1, Island2, Island3, Brige, Bigisland
 from player import Player
 from mobs import Man
 
@@ -106,7 +106,7 @@ def main():
     pg.init()
     screen = pg.display.set_mode((600, 400))
     pg.display.set_caption("Woman")
-    icon = pg.image.load(f"{game_dir}/png/icon.png.png")  # иконка
+    icon = pg.image.load(f"{game_dir}/png/icon.png")  # иконка
     pg.display.set_icon(icon)
     back = pg.image.load(f"{game_dir}/png/back1.png")  # задний фон
 
@@ -138,11 +138,12 @@ def main():
     # картинка проигрыша
     game_over_pic = pg.image.load(f"{game_dir}/png/game_over.png").convert_alpha()
     # картинка выигрыша
-    win_pic = pg.image.load(f"{game_dir}/png/Sprite_win1.png").convert_alpha()
+    win_pic = pg.image.load(f"{game_dir}/png/win.png").convert_alpha()
     win = False  # флаг выигрыша
+    # finish_flag = pg.image.load(f"{game_dir}/png/flag.png").convert_alpha()
 
     clock = pg.time.Clock()
-    platforms_map = "_ < _. # < _  * , ' #_  <  .  _  _  _' "  # карта платформ уровня
+    platforms_map = "_ < _. < _  * , ' #_  <  .  _  _  _' "  # карта платформ уровня
     platforms_x = 0
     platforms_y = 330
     man_y = 241  # y моба-мужчины
@@ -151,15 +152,15 @@ def main():
     # создание объектов игры, определенный знак - определенная платформа
     for symbol in platforms_map:
         if symbol == "_":
-            platform = Island_0(platforms_x, platforms_y, all_sprites, platforms)
+            platform = Island1(platforms_x, platforms_y, all_sprites, platforms)
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
         if symbol == ".":
-            platform = Island_1(platforms_x, platforms_y, all_sprites, platforms)
+            platform = Island2(platforms_x, platforms_y, all_sprites, platforms)
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
         if symbol == ",":
-            platform = Island_2(platforms_x, platforms_y, all_sprites, platforms)
+            platform = Island3(platforms_x, platforms_y, all_sprites, platforms)
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
         if symbol == "*":
@@ -167,13 +168,14 @@ def main():
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
         if symbol == "<":
-            platform = Big_island(platforms_x, platforms_y - 5, all_sprites, platforms)
+            platform = Bigisland(platforms_x, platforms_y - 5, all_sprites, platforms)
             # на середине острова размещаем парня-моба
             Man(
                 platform.rect.x + platform.rect.width // 2, man_y, all_sprites, men_mobs
             )
             len_level += platform.rect.width + 70
             platforms_x += platform.rect.width + 70
+
     player = Player(all_sprites)  # создаем персонажа
     camera = Camera(camera_configure, len_level)  # создаем камеру
     combat = Combat(all_sprites)  # создаем класс боя
@@ -238,7 +240,6 @@ def main():
                         screen.blit(
                             s.image, camera.apply(s)
                         )  # при пересечении выводим все, кроме персонажа и моба
-
         # error: если на экране два моба, то один из них пропадет при пересечении с другим
         # хочется, чтобы он остался
         # -------------------------------------------------
