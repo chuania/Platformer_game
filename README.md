@@ -14,7 +14,7 @@
 4. Запускаем файл "my_game.py"
 
 
-После реализации, игра имеет следующий интерфейс:
+После реализации, игра имеет следующий графический интерфейс:
 <p>
   <img width="500" height="350" src="https://github.com/chuania/Platformer_game/blob/main/png/game.png">
 </p>
