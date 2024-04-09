@@ -10,7 +10,7 @@
 1. Создаем venv: `python3 -m venv venv_name`
 где venv_name название виртуального окружения
 2. Активируем venv: `source venv_name/bin/activate`
-3. Устанавливаем модуль pygame: `pip install pygame`
+3. Устанавливаем библиотеку pygame: `pip install pygame`
 4. Запускаем файл "my_game.py"
 
 
