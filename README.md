@@ -5,6 +5,15 @@
 3. Созданы мобы. Пересечение с мобом - быстрый проигрыш. 
 4. Преодоление всех препятствий - победа.
 
+## Инструкция по запуску проекта после клонирования
+
+1. Создаем venv: `python3 -m venv venv_name`
+где venv_name название виртуального окружения
+2. Активируем venv: `source venv_name/bin/activate`
+3. Устанавливаем модуль pygame: `pip install pygame`
+4. Запускаем файл "my_game.py"
+
+
 После реализации, игра имеет следующий интерфейс:
 <p>
   <img width="500" height="350" src="https://github.com/chuania/Platformer_game/blob/main/png/game.png">
